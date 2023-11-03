@@ -1,4 +1,4 @@
-import * as cdk from 'aws-cdk-lib';
+import * as cdk from "aws-cdk-lib";
 import {
   aws_cloudwatch as cw,
   aws_cloudwatch_actions as cw_actions,
@@ -16,11 +16,11 @@ import {
   Names,
   PhysicalName,
   region_info as ri,
-} from 'aws-cdk-lib';
-import { IAlarm } from 'aws-cdk-lib/aws-cloudwatch';
-import { ILoadBalancerV2 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { IDatabaseCluster } from 'aws-cdk-lib/aws-rds';
-import { Construct } from 'constructs';
+} from "aws-cdk-lib";
+import { IAlarm } from "aws-cdk-lib/aws-cloudwatch";
+import { ILoadBalancerV2 } from "aws-cdk-lib/aws-elasticloadbalancingv2";
+import { IDatabaseCluster } from "aws-cdk-lib/aws-rds";
+import { Construct } from "constructs";
 
 export interface EcsAppProps {
   vpc: ec2.Vpc;
@@ -44,25 +44,25 @@ export class EcsApp extends Construct {
 
     // ------------ Application LoadBalancer ---------------
     //Security Group of ALB for App
-    const albSg = new ec2.SecurityGroup(this, 'AlbSg', {
+    const albSg = new ec2.SecurityGroup(this, "AlbSg", {
       vpc: props.vpc,
       allowAllOutbound: true,
     });
 
     // ALB for App Server
-    const alb = new elbv2.ApplicationLoadBalancer(this, 'Alb', {
+    const alb = new elbv2.ApplicationLoadBalancer(this, "Alb", {
       vpc: props.vpc,
       internetFacing: true,
       securityGroup: albSg,
       vpcSubnets: props.vpc.selectSubnets({
-        subnetGroupName: 'Public',
+        subnetGroupName: "Public",
       }),
       loadBalancerName: PhysicalName.GENERATE_IF_NEEDED, // for crossRegionReference
     });
     this.alb = alb;
     this.albFullName = alb.loadBalancerFullName;
 
-    const albListener = alb.addListener('AlbSslListener', {
+    const albListener = alb.addListener("AlbSslListener", {
       port: 80,
     });
 
@@ -71,7 +71,7 @@ export class EcsApp extends Construct {
     // This bucket can not be encrypted with KMS CMK
     // See: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html#access-logging-bucket-permissions
     //
-    const albLogBucket = new s3.Bucket(this, 'AlbLogBucket', {
+    const albLogBucket = new s3.Bucket(this, "AlbLogBucket", {
       accessControl: s3.BucketAccessControl.PRIVATE,
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -79,8 +79,8 @@ export class EcsApp extends Construct {
       enforceSSL: true,
     });
 
-    alb.setAttribute('access_logs.s3.enabled', 'true');
-    alb.setAttribute('access_logs.s3.bucket', albLogBucket.bucketName);
+    alb.setAttribute("access_logs.s3.enabled", "true");
+    alb.setAttribute("access_logs.s3.bucket", albLogBucket.bucketName);
 
     // Permissions for Access Logging
     //    Why don't use bForApp.logAccessLogs(albLogBucket); ?
@@ -90,32 +90,40 @@ export class EcsApp extends Construct {
     albLogBucket.addToResourcePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ['s3:PutObject'],
+        actions: ["s3:PutObject"],
         // ALB access logging needs S3 put permission from ALB service account for the region
-        principals: [new iam.AccountPrincipal(ri.RegionInfo.get(cdk.Stack.of(this).region).elbv2Account)],
-        resources: [albLogBucket.arnForObjects(`AWSLogs/${cdk.Stack.of(this).account}/*`)],
-      }),
+        principals: [
+          new iam.AccountPrincipal(
+            ri.RegionInfo.get(cdk.Stack.of(this).region).elbv2Account
+          ),
+        ],
+        resources: [
+          albLogBucket.arnForObjects(`AWSLogs/${cdk.Stack.of(this).account}/*`),
+        ],
+      })
     );
     albLogBucket.addToResourcePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ['s3:PutObject'],
-        principals: [new iam.ServicePrincipal('delivery.logs.amazonaws.com')],
-        resources: [albLogBucket.arnForObjects(`AWSLogs/${cdk.Stack.of(this).account}/*`)],
+        actions: ["s3:PutObject"],
+        principals: [new iam.ServicePrincipal("delivery.logs.amazonaws.com")],
+        resources: [
+          albLogBucket.arnForObjects(`AWSLogs/${cdk.Stack.of(this).account}/*`),
+        ],
         conditions: {
           StringEquals: {
-            's3:x-amz-acl': 'bucket-owner-full-control',
+            "s3:x-amz-acl": "bucket-owner-full-control",
           },
         },
-      }),
+      })
     );
     albLogBucket.addToResourcePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ['s3:GetBucketAcl'],
-        principals: [new iam.ServicePrincipal('delivery.logs.amazonaws.com')],
+        actions: ["s3:GetBucketAcl"],
+        principals: [new iam.ServicePrincipal("delivery.logs.amazonaws.com")],
         resources: [albLogBucket.bucketArn],
-      }),
+      })
     );
 
     // --------------------- Fargate Cluster ----------------------------
@@ -125,17 +133,24 @@ export class EcsApp extends Construct {
     // Role for ECS Agent
     // The task execution role grants the Amazon ECS container and Fargate agents permission to make AWS API calls on your behalf.
     // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html
-    const taskExecutionRole = new iam.Role(this, 'EcsTaskExecutionRole', {
-      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
-      managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy')],
+    const taskExecutionRole = new iam.Role(this, "EcsTaskExecutionRole", {
+      assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName(
+          "service-role/AmazonECSTaskExecutionRolePolicy"
+        ),
+      ],
       inlinePolicies: {
         ecrPullThroughCache:
           // https://docs.aws.amazon.com/AmazonECR/latest/userguide/pull-through-cache.html#pull-through-cache-iam
           new iam.PolicyDocument({
             statements: [
               new iam.PolicyStatement({
-                actions: ['ecr:BatchImportUpstreamImage', 'ecr:CreateRepository'],
-                resources: ['*'],
+                actions: [
+                  "ecr:BatchImportUpstreamImage",
+                  "ecr:CreateRepository",
+                ],
+                resources: ["*"],
               }),
             ],
           }),
@@ -145,21 +160,21 @@ export class EcsApp extends Construct {
     // Role for Container
     // With IAM roles for Amazon ECS tasks, you can specify an IAM role that can be used by the containers in a task.
     // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html
-    const taskRole = new iam.Role(this, 'EcsTaskRole', {
-      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+    const taskRole = new iam.Role(this, "EcsTaskRole", {
+      assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
     });
 
     // SecurityGroup for Fargate service
     // - Inbound access will be added automatically on associating ALB
     // - Outbound access will be used for DB and AWS APIs
-    const appSg = new ec2.SecurityGroup(this, 'AppSg', {
+    const appSg = new ec2.SecurityGroup(this, "AppSg", {
       vpc: props.vpc,
       allowAllOutbound: true, // for AWS APIs
     });
     props.dbCluster.connections.allowDefaultPortFrom(appSg);
 
     // CloudWatch Logs Group for Container
-    const appLogGroup = new cwl.LogGroup(this, 'AppLogGroup', {
+    const appLogGroup = new cwl.LogGroup(this, "AppLogGroup", {
       retention: cwl.RetentionDays.THREE_MONTHS,
       encryptionKey: props.cmk,
     });
@@ -167,24 +182,34 @@ export class EcsApp extends Construct {
     // Permission to access KMS Key from CloudWatch Logs
     props.cmk.addToResourcePolicy(
       new iam.PolicyStatement({
-        actions: ['kms:Encrypt*', 'kms:Decrypt*', 'kms:ReEncrypt*', 'kms:GenerateDataKey*', 'kms:Describe*'],
-        principals: [new iam.ServicePrincipal(`logs.${cdk.Stack.of(this).region}.amazonaws.com`)],
-        resources: ['*'],
+        actions: [
+          "kms:Encrypt*",
+          "kms:Decrypt*",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:Describe*",
+        ],
+        principals: [
+          new iam.ServicePrincipal(
+            `logs.${cdk.Stack.of(this).region}.amazonaws.com`
+          ),
+        ],
+        resources: ["*"],
         conditions: {
           ArnLike: {
-            'kms:EncryptionContext:aws:logs:arn': `arn:aws:logs:${cdk.Stack.of(this).region}:${
-              cdk.Stack.of(this).account
-            }:*`,
+            "kms:EncryptionContext:aws:logs:arn": `arn:aws:logs:${
+              cdk.Stack.of(this).region
+            }:${cdk.Stack.of(this).account}:*`,
           },
         },
-      }),
+      })
     );
 
     // ---- Cluster definition
 
     // Fargate Cluster
     // -  Enabling CloudWatch ContainerInsights
-    const cluster = new ecs.Cluster(this, 'Cluster', {
+    const cluster = new ecs.Cluster(this, "Cluster", {
       vpc: props.vpc,
       containerInsights: true,
       enableFargateCapacityProviders: true,
@@ -194,12 +219,16 @@ export class EcsApp extends Construct {
 
     // Task definition
     // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
-    const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
-      executionRole: taskExecutionRole,
-      taskRole: taskRole,
-      cpu: 256,
-      memoryLimitMiB: 512,
-    });
+    const taskDefinition = new ecs.FargateTaskDefinition(
+      this,
+      "TaskDefinition",
+      {
+        executionRole: taskExecutionRole,
+        taskRole: taskRole,
+        cpu: 256,
+        memoryLimitMiB: 512,
+      }
+    );
 
     // Container Registry
     // - Using pull through cache rules
@@ -207,30 +236,33 @@ export class EcsApp extends Construct {
     //   ecrRepositoryPrefix must start with a letter and can only contain lowercase letters, numbers, hyphens, and underscores and max length is 20.
     const ecrRepositoryPrefix = Names.uniqueResourceName(this, {
       maxLength: 20,
-      separator: '-',
+      separator: "-",
     }).toLowerCase();
-    new ecr.CfnPullThroughCacheRule(this, 'PullThroughCacheRule', {
+    new ecr.CfnPullThroughCacheRule(this, "PullThroughCacheRule", {
       ecrRepositoryPrefix: ecrRepositoryPrefix,
-      upstreamRegistryUrl: 'public.ecr.aws',
+      upstreamRegistryUrl: "public.ecr.aws",
     });
 
     // Container
-    const containerImage = 'docker/library/httpd';
+    const containerImage = "docker/library/httpd";
     const containerRepository = ecr.Repository.fromRepositoryName(
       this,
-      'PullThrough',
-      `${ecrRepositoryPrefix}/${containerImage}`,
+      "PullThrough",
+      `${ecrRepositoryPrefix}/${containerImage}`
     );
 
     // The repository is automatically created by pull through cache, but you must specify it explicitly to enable ImageScanonPush.
-    new ecr.Repository(this, 'Repository', {
+    new ecr.Repository(this, "Repository", {
       repositoryName: containerRepository.repositoryName,
       imageScanOnPush: true,
     });
 
-    const ecsContainer = taskDefinition.addContainer('App', {
+    const ecsContainer = taskDefinition.addContainer("App", {
       // -- Option 1: If you want to use your ECR repository with pull through cache, you can use like this.
-      image: ecs.ContainerImage.fromEcrRepository(containerRepository, 'latest'),
+      image: ecs.ContainerImage.fromEcrRepository(
+        containerRepository,
+        "latest"
+      ),
 
       // -- Option 2: If you want to use your ECR repository, you can use like this.
       // --           You Need to create your repository and dockerimage, then pass it to this stack.
@@ -242,10 +274,10 @@ export class EcsApp extends Construct {
       // image: ecs.ContainerImage.fromRegistry("amazon/amazon-ecs-sample"),
 
       environment: {
-        ENVIRONMENT_VARIABLE_SAMPLE_KEY: 'Environment Variable Sample Value',
+        ENVIRONMENT_VARIABLE_SAMPLE_KEY: "Environment Variable Sample Value",
       },
       logging: ecs.LogDriver.awsLogs({
-        streamPrefix: 'BLEA-ECSApp-',
+        streamPrefix: "BLEA-ECSApp-",
         logGroup: appLogGroup,
       }),
       // -- SAMPLE: Get value from SecretsManager
@@ -259,7 +291,7 @@ export class EcsApp extends Construct {
     });
 
     // Service
-    const service = new ecs.FargateService(this, 'Service', {
+    const service = new ecs.FargateService(this, "Service", {
       cluster,
       taskDefinition,
       desiredCount: 2,
@@ -274,7 +306,7 @@ export class EcsApp extends Construct {
       // https://docs.aws.amazon.com/cdk/api/latest/docs/aws-ecs-readme.html#fargate-capacity-providers
       capacityProviderStrategies: [
         {
-          capacityProvider: 'FARGATE',
+          capacityProvider: "FARGATE",
           weight: 1,
         },
         // -- SAMPLE: Fargate Spot
@@ -285,7 +317,7 @@ export class EcsApp extends Construct {
       ],
       vpcSubnets: props.vpc.selectSubnets({
         // subnetGroupName: 'Private', // For public DockerHub
-        subnetGroupName: 'Protected', // For your ECR. Need to use PrivateLinke for ECR
+        subnetGroupName: "Protected", // For your ECR. Need to use PrivateLinke for ECR
       }),
       securityGroups: [appSg],
       serviceName: PhysicalName.GENERATE_IF_NEEDED, // for crossRegionReferences
@@ -294,7 +326,7 @@ export class EcsApp extends Construct {
 
     // Define ALB Target Group
     // https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-elasticloadbalancingv2.ApplicationTargetGroup.html
-    const appTargetGroup = albListener.addTargets('AppTargetGroup', {
+    const appTargetGroup = albListener.addTargets("AppTargetGroup", {
       protocol: elbv2.ApplicationProtocol.HTTP,
       targets: [service],
       deregistrationDelay: cdk.Duration.seconds(30),
@@ -319,13 +351,13 @@ export class EcsApp extends Construct {
 
     // Scaling with CPU Utilization avarage on all tasks
     this.ecsTargetUtilizationPercent = 50; // Used in Dashboard Stack
-    ecsScaling.scaleOnCpuUtilization('CpuScaling', {
+    ecsScaling.scaleOnCpuUtilization("CpuScaling", {
       targetUtilizationPercent: this.ecsTargetUtilizationPercent,
     });
 
     // Scaling with Requests per tasks
     this.ecsScaleOnRequestCount = 10000; // Used in Dashboard Stack
-    ecsScaling.scaleOnRequestCount('RequestScaling', {
+    ecsScaling.scaleOnRequestCount("RequestScaling", {
       requestsPerTarget: this.ecsScaleOnRequestCount,
       targetGroup: appTargetGroup,
     });
@@ -336,11 +368,12 @@ export class EcsApp extends Construct {
         period: cdk.Duration.minutes(1),
         statistic: cw.Stats.AVERAGE,
       })
-      .createAlarm(this, 'FargateCpuUtil', {
+      .createAlarm(this, "FargateCpuUtil", {
         evaluationPeriods: 3,
         datapointsToAlarm: 3,
         threshold: 80,
-        comparisonOperator: cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        comparisonOperator:
+          cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         actionsEnabled: true,
       })
       .addAlarmAction(new cw_actions.SnsAction(props.alarmTopic));
@@ -376,10 +409,11 @@ export class EcsApp extends Construct {
         period: cdk.Duration.minutes(1),
         statistic: cw.Stats.AVERAGE,
       })
-      .createAlarm(this, 'AlbResponseTime', {
+      .createAlarm(this, "AlbResponseTime", {
         evaluationPeriods: 3,
         threshold: 100,
-        comparisonOperator: cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        comparisonOperator:
+          cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         actionsEnabled: true,
       })
       .addAlarmAction(new cw_actions.SnsAction(props.alarmTopic));
@@ -390,10 +424,11 @@ export class EcsApp extends Construct {
         period: cdk.Duration.minutes(1),
         statistic: cw.Stats.SUM,
       })
-      .createAlarm(this, 'AlbHttp4xx', {
+      .createAlarm(this, "AlbHttp4xx", {
         evaluationPeriods: 3,
         threshold: 10,
-        comparisonOperator: cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        comparisonOperator:
+          cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         actionsEnabled: true,
       })
       .addAlarmAction(new cw_actions.SnsAction(props.alarmTopic));
@@ -404,10 +439,11 @@ export class EcsApp extends Construct {
         period: cdk.Duration.minutes(1),
         statistic: cw.Stats.SUM,
       })
-      .createAlarm(this, 'AlbHttp5xx', {
+      .createAlarm(this, "AlbHttp5xx", {
         evaluationPeriods: 3,
         threshold: 10,
-        comparisonOperator: cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        comparisonOperator:
+          cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         actionsEnabled: true,
       })
       .addAlarmAction(new cw_actions.SnsAction(props.alarmTopic));
@@ -418,7 +454,7 @@ export class EcsApp extends Construct {
         period: cdk.Duration.minutes(1),
         statistic: cw.Stats.AVERAGE,
       })
-      .createAlarm(this, 'AlbTgHealthyHostCount', {
+      .createAlarm(this, "AlbTgHealthyHostCount", {
         evaluationPeriods: 3,
         threshold: 1,
         comparisonOperator: cw.ComparisonOperator.LESS_THAN_THRESHOLD,
@@ -433,40 +469,46 @@ export class EcsApp extends Construct {
         period: cdk.Duration.minutes(1),
         statistic: cw.Stats.AVERAGE,
       })
-      .createAlarm(this, 'AlbTgUnHealthyHostCount', {
+      .createAlarm(this, "AlbTgUnHealthyHostCount", {
         evaluationPeriods: 3,
         threshold: 1,
-        comparisonOperator: cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        comparisonOperator:
+          cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         actionsEnabled: true,
         alarmName: PhysicalName.GENERATE_IF_NEEDED, // for crossRegionReferences
       });
-    albTargetGroupUnhealthyHostCountAlarm.addAlarmAction(new cw_actions.SnsAction(props.alarmTopic));
-    this.albTargetGroupUnhealthyHostCountAlarm = albTargetGroupUnhealthyHostCountAlarm;
+    albTargetGroupUnhealthyHostCountAlarm.addAlarmAction(
+      new cw_actions.SnsAction(props.alarmTopic)
+    );
+    this.albTargetGroupUnhealthyHostCountAlarm =
+      albTargetGroupUnhealthyHostCountAlarm;
 
     // ----------------------- Event notification for ECS -----------------------------
     // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_cwe_events.html#ecs_service_events
-    new cwe.Rule(this, 'ECSServiceActionEventRule', {
-      description: 'CloudWatch Event Rule to send notification on ECS Service action events.',
+    new cwe.Rule(this, "ECSServiceActionEventRule", {
+      description:
+        "CloudWatch Event Rule to send notification on ECS Service action events.",
       enabled: true,
       eventPattern: {
-        source: ['aws.ecs'],
-        detailType: ['ECS Service Action'],
+        source: ["aws.ecs"],
+        detailType: ["ECS Service Action"],
         detail: {
-          eventType: ['WARN', 'ERROR'],
+          eventType: ["WARN", "ERROR"],
         },
       },
       targets: [new cwet.SnsTopic(props.alarmTopic)],
     });
 
     // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_cwe_events.html#ecs_service_deployment_events
-    new cwe.Rule(this, 'ECSServiceDeploymentEventRule', {
-      description: 'CloudWatch Event Rule to send notification on ECS Service deployment events.',
+    new cwe.Rule(this, "ECSServiceDeploymentEventRule", {
+      description:
+        "CloudWatch Event Rule to send notification on ECS Service deployment events.",
       enabled: true,
       eventPattern: {
-        source: ['aws.ecs'],
-        detailType: ['ECS Deployment State Change'],
+        source: ["aws.ecs"],
+        detailType: ["ECS Deployment State Change"],
         detail: {
-          eventType: ['WARN', 'ERROR'],
+          eventType: ["WARN", "ERROR"],
         },
       },
       targets: [new cwet.SnsTopic(props.alarmTopic)],

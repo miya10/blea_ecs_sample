@@ -7,10 +7,16 @@ import {
   aws_sns as sns,
   Duration,
   RemovalPolicy,
-} from 'aws-cdk-lib';
-import { InstanceClass, InstanceSize, InstanceType, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
-import { IDatabaseCluster } from 'aws-cdk-lib/aws-rds';
-import { Construct } from 'constructs';
+} from "aws-cdk-lib";
+import {
+  InstanceClass,
+  InstanceSize,
+  InstanceType,
+  SubnetType,
+  Vpc,
+} from "aws-cdk-lib/aws-ec2";
+import { IDatabaseCluster } from "aws-cdk-lib/aws-rds";
+import { Construct } from "constructs";
 
 export interface DatastoreProps {
   vpc: Vpc;
@@ -25,7 +31,7 @@ export class Datastore extends Construct {
     super(scope, id);
 
     // Create RDS MySQL Instance
-    const cluster = new rds.DatabaseCluster(this, 'AuroraCluster', {
+    const cluster = new rds.DatabaseCluster(this, "AuroraCluster", {
       // for Aurora PostgreSQL
       engine: rds.DatabaseClusterEngine.auroraPostgres({
         version: rds.AuroraPostgresEngineVersion.VER_11_9,
@@ -34,7 +40,7 @@ export class Datastore extends Construct {
       // engine: rds.DatabaseClusterEngine.auroraMysql({
       //   version: rds.AuroraMysqlEngineVersion.VER_2_09_1
       // }),
-      credentials: rds.Credentials.fromGeneratedSecret('dbadmin'),
+      credentials: rds.Credentials.fromGeneratedSecret("dbadmin"),
       instanceProps: {
         instanceType: InstanceType.of(InstanceClass.T3, InstanceSize.MEDIUM),
         vpcSubnets: {
@@ -46,11 +52,11 @@ export class Datastore extends Construct {
         performanceInsightRetention: rds.PerformanceInsightRetention.DEFAULT, // 7 days
       },
       removalPolicy: RemovalPolicy.SNAPSHOT,
-      defaultDatabaseName: 'mydb',
+      defaultDatabaseName: "mydb",
       storageEncrypted: true,
       storageEncryptionKey: props.cmk,
       //      cloudwatchLogsExports: ['error', 'general', 'slowquery', 'audit'],  // For Aurora MySQL
-      cloudwatchLogsExports: ['postgresql'], // For Aurora PostgreSQL
+      cloudwatchLogsExports: ["postgresql"], // For Aurora PostgreSQL
       cloudwatchLogsRetention: logs.RetentionDays.THREE_MONTHS,
       instanceIdentifierBase: id,
     });
@@ -64,11 +70,12 @@ export class Datastore extends Construct {
         period: Duration.minutes(1),
         statistic: cw.Stats.AVERAGE,
       })
-      .createAlarm(this, 'AuroraCPUUtilAlarm', {
+      .createAlarm(this, "AuroraCPUUtilAlarm", {
         evaluationPeriods: 3,
         datapointsToAlarm: 3,
         threshold: 90,
-        comparisonOperator: cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        comparisonOperator:
+          cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         actionsEnabled: true,
       })
       .addAlarmAction(new cw_actions.SnsAction(props.alarmTopic));
@@ -103,26 +110,26 @@ export class Datastore extends Construct {
     // To specify clusters or instances, add "sourceType (sting)" and "sourceIds (list)"
     // sourceType is one of these - db-instance | db-cluster | db-parameter-group | db-security-group | db-snapshot | db-cluster-snapshot
     //
-    new rds.CfnEventSubscription(this, 'RdsClusterEventSubsc', {
+    new rds.CfnEventSubscription(this, "RdsClusterEventSubsc", {
       snsTopicArn: props.alarmTopic.topicArn,
       enabled: true,
-      sourceType: 'db-cluster',
-      eventCategories: ['failure', 'failover', 'maintenance'],
+      sourceType: "db-cluster",
+      eventCategories: ["failure", "failover", "maintenance"],
     });
 
-    new rds.CfnEventSubscription(this, 'RdsInstanceEventSubsc', {
+    new rds.CfnEventSubscription(this, "RdsInstanceEventSubsc", {
       snsTopicArn: props.alarmTopic.topicArn,
       enabled: true,
-      sourceType: 'db-instance',
+      sourceType: "db-instance",
       eventCategories: [
-        'availability',
-        'configuration change',
-        'deletion',
-        'failover',
-        'failure',
-        'maintenance',
-        'notification',
-        'recovery',
+        "availability",
+        "configuration change",
+        "deletion",
+        "failover",
+        "failure",
+        "maintenance",
+        "notification",
+        "recovery",
       ],
     });
   }

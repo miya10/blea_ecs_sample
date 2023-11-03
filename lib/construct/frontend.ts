@@ -1,4 +1,4 @@
-import * as cdk from 'aws-cdk-lib';
+import * as cdk from "aws-cdk-lib";
 import {
   aws_cloudfront as cloudfront,
   aws_cloudfront_origins as origins,
@@ -8,9 +8,9 @@ import {
   // aws_certificatemanager as acm,
   // aws_route53 as r53,
   // aws_route53_targets as r53targets,
-} from 'aws-cdk-lib';
-import { ILoadBalancerV2 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import { Construct } from 'constructs';
+} from "aws-cdk-lib";
+import { ILoadBalancerV2 } from "aws-cdk-lib/aws-elasticloadbalancingv2";
+import { Construct } from "constructs";
 
 export interface FrontendProps {
   alb: ILoadBalancerV2;
@@ -36,10 +36,10 @@ export class Frontend extends Construct {
     //  Caution:
     //
     //
-    const webAcl = new wafv2.CfnWebACL(this, 'WebAcl', {
+    const webAcl = new wafv2.CfnWebACL(this, "WebAcl", {
       defaultAction: { allow: {} },
       name: cdk.Names.uniqueResourceName(this, {}),
-      scope: 'CLOUDFRONT',
+      scope: "CLOUDFRONT",
       visibilityConfig: {
         cloudWatchMetricsEnabled: true,
         metricName: cdk.Names.uniqueResourceName(this, {}),
@@ -52,13 +52,13 @@ export class Frontend extends Construct {
           visibilityConfig: {
             sampledRequestsEnabled: true,
             cloudWatchMetricsEnabled: true,
-            metricName: 'AWS-AWSManagedRulesCommonRuleSet',
+            metricName: "AWS-AWSManagedRulesCommonRuleSet",
           },
-          name: 'AWSManagedRulesCommonRuleSet',
+          name: "AWSManagedRulesCommonRuleSet",
           statement: {
             managedRuleGroupStatement: {
-              vendorName: 'AWS',
-              name: 'AWSManagedRulesCommonRuleSet',
+              vendorName: "AWS",
+              name: "AWSManagedRulesCommonRuleSet",
             },
           },
         },
@@ -68,13 +68,13 @@ export class Frontend extends Construct {
           visibilityConfig: {
             sampledRequestsEnabled: true,
             cloudWatchMetricsEnabled: true,
-            metricName: 'AWS-AWSManagedRulesKnownBadInputsRuleSet',
+            metricName: "AWS-AWSManagedRulesKnownBadInputsRuleSet",
           },
-          name: 'AWSManagedRulesKnownBadInputsRuleSet',
+          name: "AWSManagedRulesKnownBadInputsRuleSet",
           statement: {
             managedRuleGroupStatement: {
-              vendorName: 'AWS',
-              name: 'AWSManagedRulesKnownBadInputsRuleSet',
+              vendorName: "AWS",
+              name: "AWSManagedRulesKnownBadInputsRuleSet",
             },
           },
         },
@@ -84,13 +84,13 @@ export class Frontend extends Construct {
           visibilityConfig: {
             sampledRequestsEnabled: true,
             cloudWatchMetricsEnabled: true,
-            metricName: 'AWS-AWSManagedRulesAmazonIpReputationList',
+            metricName: "AWS-AWSManagedRulesAmazonIpReputationList",
           },
-          name: 'AWSManagedRulesAmazonIpReputationList',
+          name: "AWSManagedRulesAmazonIpReputationList",
           statement: {
             managedRuleGroupStatement: {
-              vendorName: 'AWS',
-              name: 'AWSManagedRulesAmazonIpReputationList',
+              vendorName: "AWS",
+              name: "AWSManagedRulesAmazonIpReputationList",
             },
           },
         },
@@ -100,13 +100,13 @@ export class Frontend extends Construct {
           visibilityConfig: {
             sampledRequestsEnabled: true,
             cloudWatchMetricsEnabled: true,
-            metricName: 'AWS-AWSManagedRulesLinuxRuleSet',
+            metricName: "AWS-AWSManagedRulesLinuxRuleSet",
           },
-          name: 'AWSManagedRulesLinuxRuleSet',
+          name: "AWSManagedRulesLinuxRuleSet",
           statement: {
             managedRuleGroupStatement: {
-              vendorName: 'AWS',
-              name: 'AWSManagedRulesLinuxRuleSet',
+              vendorName: "AWS",
+              name: "AWSManagedRulesLinuxRuleSet",
             },
           },
         },
@@ -116,13 +116,13 @@ export class Frontend extends Construct {
           visibilityConfig: {
             sampledRequestsEnabled: true,
             cloudWatchMetricsEnabled: true,
-            metricName: 'AWS-AWSManagedRulesSQLiRuleSet',
+            metricName: "AWS-AWSManagedRulesSQLiRuleSet",
           },
-          name: 'AWSManagedRulesSQLiRuleSet',
+          name: "AWSManagedRulesSQLiRuleSet",
           statement: {
             managedRuleGroupStatement: {
-              vendorName: 'AWS',
-              name: 'AWSManagedRulesSQLiRuleSet',
+              vendorName: "AWS",
+              name: "AWSManagedRulesSQLiRuleSet",
             },
           },
         },
@@ -133,7 +133,7 @@ export class Frontend extends Construct {
     // This bucket cannot be encrypted with KMS CMK
     // See: https://aws.amazon.com/premiumsupport/knowledge-center/s3-website-cloudfront-error-403/
     //
-    const webContentBucket = new s3.Bucket(this, 'WebContentBucket', {
+    const webContentBucket = new s3.Bucket(this, "WebContentBucket", {
       accessControl: s3.BucketAccessControl.PRIVATE,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
       versioned: true,
@@ -154,7 +154,7 @@ export class Frontend extends Construct {
     // });
 
     // --------- CloudFront Distrubution
-    const distribution = new cloudfront.Distribution(this, 'Distribution', {
+    const distribution = new cloudfront.Distribution(this, "Distribution", {
       defaultBehavior: {
         origin: new origins.LoadBalancerV2Origin(props.alb, {
           protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
@@ -165,9 +165,10 @@ export class Frontend extends Construct {
         originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER,
       },
       additionalBehaviors: {
-        '/static/*': {
+        "/static/*": {
           origin: new origins.S3Origin(webContentBucket),
-          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          viewerProtocolPolicy:
+            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
         },
       },
@@ -175,18 +176,18 @@ export class Frontend extends Construct {
         {
           httpStatus: 403,
           responseHttpStatus: 403,
-          responsePagePath: '/static/sorry.html',
+          responsePagePath: "/static/sorry.html",
           ttl: cdk.Duration.seconds(20),
         },
       ],
-      defaultRootObject: '/', // Need for SecurityHub Findings CloudFront.1 compliant
+      defaultRootObject: "/", // Need for SecurityHub Findings CloudFront.1 compliant
 
       // WAF defined on us-east-1
       webAclId: webAcl.attrArn,
 
       // logging
       enableLogging: true,
-      logBucket: new s3.Bucket(this, 'CloudFrontLogBucket', {
+      logBucket: new s3.Bucket(this, "CloudFrontLogBucket", {
         accessControl: s3.BucketAccessControl.PRIVATE,
         encryption: s3.BucketEncryption.S3_MANAGED,
         blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -195,7 +196,7 @@ export class Frontend extends Construct {
         objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
       }),
       logIncludesCookies: true,
-      logFilePrefix: 'CloudFrontAccessLogs/',
+      logFilePrefix: "CloudFrontAccessLogs/",
 
       // -- Sample to use custom domain on CloudFront
       // domainNames: [`${props.cloudFrontHostName}.${hostedZone.zoneName}`],

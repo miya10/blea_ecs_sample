@@ -1,22 +1,22 @@
-import { Stage } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-import { AppParameter } from '../../parameter';
-import { BLEAEcsAppFrontendStack } from '../stack/blea-guest-ecs-app-frontend-stack';
-import { BLEAEcsAppMonitoringStack } from '../stack/blea-guest-ecs-app-monitoring-stack';
-import { BLEAEcsAppStack } from '../stack/blea-guest-ecs-app-sample-stack';
+import { Stage } from "aws-cdk-lib";
+import { Construct } from "constructs";
+import { AppParameter } from "../../parameter";
+import { BLEAEcsAppFrontendStack } from "../stack/blea-guest-ecs-app-frontend-stack";
+import { BLEAEcsAppMonitoringStack } from "../stack/blea-guest-ecs-app-monitoring-stack";
+import { BLEAEcsAppStack } from "../stack/blea-guest-ecs-app-sample-stack";
 
 export class BLEAEcsAppStage extends Stage {
   constructor(scope: Construct, id: string, props: AppParameter) {
     super(scope, id, props);
 
-    const ecsapp = new BLEAEcsAppStack(this, 'BLEAEcsApp', {
+    const ecsapp = new BLEAEcsAppStack(this, "BLEAEcsApp", {
       env: {
         account: props.env?.account || process.env.CDK_DEFAULT_ACCOUNT,
         region: props.env?.region || process.env.CDK_DEFAULT_REGION,
       },
       crossRegionReferences: true,
       tags: {
-        Repository: 'aws-samples/baseline-environment-on-aws',
+        Repository: "aws-samples/baseline-environment-on-aws",
         Environment: props.envName,
       },
 
@@ -25,14 +25,14 @@ export class BLEAEcsAppStage extends Stage {
       vpcCidr: props.vpcCidr,
     });
 
-    const frontend = new BLEAEcsAppFrontendStack(this, 'BLEAEcsFrontend', {
+    const frontend = new BLEAEcsAppFrontendStack(this, "BLEAEcsFrontend", {
       env: {
         account: props.env?.account || process.env.CDK_DEFAULT_ACCOUNT,
-        region: 'us-east-1',
+        region: "us-east-1",
       },
       crossRegionReferences: true,
       tags: {
-        Repository: 'aws-samples/baseline-environment-on-aws',
+        Repository: "aws-samples/baseline-environment-on-aws",
         Environment: props.envName,
       },
 
@@ -46,14 +46,14 @@ export class BLEAEcsAppStage extends Stage {
       // cloudFrontHostName: props.cloudFrontHostName,
     });
 
-    new BLEAEcsAppMonitoringStack(this, 'BLEAEcsAppMonitoring', {
+    new BLEAEcsAppMonitoringStack(this, "BLEAEcsAppMonitoring", {
       env: {
         account: props.env?.account || process.env.CDK_DEFAULT_ACCOUNT,
         region: props.env?.region || process.env.CDK_DEFAULT_REGION,
       },
       crossRegionReferences: true,
       tags: {
-        Repository: 'aws-samples/baseline-environment-on-aws',
+        Repository: "aws-samples/baseline-environment-on-aws",
         Environment: props.envName,
       },
 
@@ -67,7 +67,8 @@ export class BLEAEcsAppStage extends Stage {
       alarmTopic: ecsapp.alarmTopic,
       albFullName: ecsapp.albFullName,
       albTargetGroupName: ecsapp.albTargetGroupName,
-      albTargetGroupUnhealthyHostCountAlarm: ecsapp.albTargetGroupUnhealthyHostCountAlarm,
+      albTargetGroupUnhealthyHostCountAlarm:
+        ecsapp.albTargetGroupUnhealthyHostCountAlarm,
       ecsClusterName: ecsapp.ecsClusterName,
       ecsServiceName: ecsapp.ecsServiceName,
       ecsScaleOnRequestCount: ecsapp.ecsScaleOnRequestCount,

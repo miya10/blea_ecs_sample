@@ -2,7 +2,7 @@
 
 ## Sample Web application (ECS+SSL)
 
-![ECS-and-SSL](../../doc/images/BLEA-GuestSampleWebECSSSL.png)
+![ECS-and-SSL](./doc/images/BLEA-GuestSampleWebECSSSL.png)
 
 - bin/blea-guest-ecs-app-ssl-sample.ts
   - ECS/Fargate + AuroraPostgreSQL

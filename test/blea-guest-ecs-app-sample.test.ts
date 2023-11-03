@@ -25,8 +25,6 @@ test(`Snapshot test for BLEA ECS App Stacks`, () => {
 
     // from parameter.ts
     monitoringNotifyEmail: devParameter.monitoringNotifyEmail,
-    monitoringSlackWorkspaceId: devParameter.monitoringSlackWorkspaceId,
-    monitoringSlackChannelId: devParameter.monitoringSlackChannelId,
     vpcCidr: devParameter.vpcCidr,
   });
 

@@ -20,8 +20,6 @@ const ecsapp = new BLEAEcsAppStack(app, 'Dev-BLEAEcsApp', {
 
   // from parameter.ts
   monitoringNotifyEmail: devParameter.monitoringNotifyEmail,
-  monitoringSlackWorkspaceId: devParameter.monitoringSlackWorkspaceId,
-  monitoringSlackChannelId: devParameter.monitoringSlackChannelId,
   vpcCidr: devParameter.vpcCidr,
 });
 

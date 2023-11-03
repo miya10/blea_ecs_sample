@@ -1,10 +1,8 @@
-import { aws_chatbot as cb, aws_iam as iam, aws_sns as sns, Names, PhysicalName } from 'aws-cdk-lib';
+import { aws_iam as iam, aws_sns as sns, PhysicalName } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
 export interface MonitoringProps {
   monitoringNotifyEmail: string;
-  monitoringSlackChannelId: string;
-  monitoringSlackWorkspaceId: string;
 }
 
 export class Monitoring extends Construct {
@@ -34,23 +32,5 @@ export class Monitoring extends Construct {
         resources: [topic.topicArn],
       }),
     );
-
-    // AWS Chatbot configuration for sending message
-    const chatbotRole = new iam.Role(this, 'ChatbotRole', {
-      assumedBy: new iam.ServicePrincipal('chatbot.amazonaws.com'),
-      managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName('ReadOnlyAccess'),
-        iam.ManagedPolicy.fromAwsManagedPolicyName('CloudWatchReadOnlyAccess'),
-      ],
-    });
-
-    // !!! Create SlackChannel and add aws chatbot app to the room
-    new cb.CfnSlackChannelConfiguration(this, 'ChatbotChannel', {
-      configurationName: Names.uniqueResourceName(this, {}),
-      slackChannelId: props.monitoringSlackChannelId,
-      iamRoleArn: chatbotRole.roleArn,
-      slackWorkspaceId: props.monitoringSlackWorkspaceId,
-      snsTopicArns: [topic.topicArn],
-    });
   }
 }

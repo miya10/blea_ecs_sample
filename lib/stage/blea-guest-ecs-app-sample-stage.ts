@@ -22,8 +22,6 @@ export class BLEAEcsAppStage extends Stage {
 
       // from parameter.ts
       monitoringNotifyEmail: props.monitoringNotifyEmail,
-      monitoringSlackWorkspaceId: props.monitoringSlackWorkspaceId,
-      monitoringSlackChannelId: props.monitoringSlackChannelId,
       vpcCidr: props.vpcCidr,
     });
 

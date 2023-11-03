@@ -11,8 +11,6 @@ import { ILoadBalancerV2 } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 
 export interface BLEAEcsAppStackProps extends StackProps {
   monitoringNotifyEmail: string;
-  monitoringSlackWorkspaceId: string;
-  monitoringSlackChannelId: string;
   vpcCidr: string;
 }
 
@@ -33,8 +31,6 @@ export class BLEAEcsAppStack extends Stack {
 
     const monitoring = new Monitoring(this, 'Monitoring', {
       monitoringNotifyEmail: props.monitoringNotifyEmail,
-      monitoringSlackWorkspaceId: props.monitoringSlackWorkspaceId,
-      monitoringSlackChannelId: props.monitoringSlackChannelId,
     });
     this.alarmTopic = monitoring.alarmTopic;
 

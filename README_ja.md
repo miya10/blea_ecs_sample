@@ -2,7 +2,7 @@
 
 ## Web アプリケーションサンプル (ECS+SSL)
 
-![ECS-and-SSL](./doc/images/BLEA-GuestSampleWebECSSSL.png)
+![ECS-and-SSL](./doc/images/BLEA-GuestSampleWebECS.png)
 
 - bin/blea-guest-ecs-app-sample.ts
   - ECS/Fargate+AuroraPostgreSQL を使ったサンプルシステム

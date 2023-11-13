@@ -4,6 +4,8 @@
 - アプリケーションのコンテナ化
 - ECR へのプッシュ
 
+<img src="./images/container-app-image.png" width="67%">
+
 ## 1. アプリケーションの作成
 TypeScript でのアプリケーション開発では、`create-react-app` を使用して Web アプリケーションをセットアップします。
 

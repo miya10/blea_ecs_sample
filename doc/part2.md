@@ -5,7 +5,7 @@
 ## 1. Aurora ServerlessV2 への移行
 `lib/construct/datastore.ts` を編集していきます。
 
-```
+```typescript
 const cluster = new rds.DatabaseCluster(this, "AuroraCluster", {
 
   --------- Aurora PostgreSQL のバージョンを修正 ---------
@@ -57,7 +57,7 @@ aws rds describe-orderable-db-instance-options \
 ```
 
 実行結果
-```
+```bash
 $ aws rds describe-orderable-db-instance-options \
 >   --engine aurora-postgresql \
 >   --db-instance-class db.serverless \
@@ -75,7 +75,7 @@ $ aws rds describe-orderable-db-instance-options \
 もしくは、[CDK API Reference](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_rds.PostgresEngineVersion.html) を参考に対応バージョンを確認します。
 
 利用可能な最新バージョンの 15.4 を使用したいのですが、インストールされている CDK パッケージのバージョンでは対応していないようなので、15.3 を利用します。
-```
+```typescript
 engine: rds.DatabaseClusterEngine.auroraPostgres({
   version: rds.AuroraPostgresEngineVersion.VER_15_3,
 }),
@@ -87,7 +87,7 @@ engine: rds.DatabaseClusterEngine.auroraPostgres({
 ※ `instanceProps` の非推奨について（[参照](https://dev.classmethod.jp/articles/aws-cdk-aurora-serverless-v2/)）
 
 修正箇所
-```
+```typescript
 instanceProps: {
   instanceType: InstanceType.of(InstanceClass.T3, InstanceSize.MEDIUM),
   vpcSubnets: {
@@ -101,7 +101,7 @@ instanceProps: {
 ```
 
 VPC 関連の設定を `instanceProps` の外に書き出します。
-```
+```typescript
 vpc: props.vpc,
 vpcSubnets: {
   subnetType: SubnetType.PRIVATE_ISOLATED,
@@ -109,7 +109,7 @@ vpcSubnets: {
 ```
 
 書き込み用インスタンスの設定を行います（引数の[参照](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_rds.ServerlessV2ClusterInstanceProps.html)）。
-```
+```typescript
 writer: rds.ClusterInstance.serverlessV2("writer", {
   enablePerformanceInsights: true,
   performanceInsightEncryptionKey: props.cmk,
@@ -118,7 +118,7 @@ writer: rds.ClusterInstance.serverlessV2("writer", {
 ```
 
 同様にリードレプリカインスタンスの設定を行います。
-```
+```typescript
 readers: [
   rds.ClusterInstance.serverlessV2("reader1", {
     enablePerformanceInsights: true,
@@ -129,7 +129,7 @@ readers: [
 ```
 
 修正後の DB クラスターの定義は以下の通りです。
-```
+```typescript
 const cluster = new rds.DatabaseCluster(this, "AuroraCluster", {
   // for Aurora PostgreSQL
   engine: rds.DatabaseClusterEngine.auroraPostgres({
@@ -168,7 +168,7 @@ const cluster = new rds.DatabaseCluster(this, "AuroraCluster", {
 ```
 
 変更を確認の上、デプロイします。
-```
+```bash
 npx cdk diff
 npx cdk deploy Dev-BLEAEcsApp
 ```

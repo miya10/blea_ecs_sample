@@ -15,7 +15,7 @@
 BLEA ECS サンプルアプリケーションをデプロイします。
 
 コードの取得
-```
+```bash
 git clone https://github.com/miya10/blea_ecs_sample.git
 cd blea_ecs_sample
 git checkout init
@@ -23,17 +23,17 @@ git pull
 ```
 
 パッケージのインストール
-```
+```bash
 npm ci
 ```
 
 CDK の準備
-```
+```bash
 npx cdk bootstrap
 ```
 
 CDK 初回デプロイ（30 分前後かかります）
-```
+```bash
 npx cdk deploy --all
 ```
 

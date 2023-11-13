@@ -10,7 +10,7 @@ TypeScript でのアプリケーション開発では、`create-react-app` を�
 > `create-react-app` は単一ページの React アプリケーションを作成する方法として公式にサポートされています。設定不要の最新のビルドセットアップを提供します（[公式ドキュメント](https://create-react-app.dev/docs/getting-started/)）。
 
 Typescript テンプレートを利用して、Web アプリケーションを作成します。
-```
+```bash
 cd ~/environment
 npx create-react-app app --template typescript
 ```
@@ -41,7 +41,7 @@ app
 ```
 
 アプリケーションをローカルで実行してみます。
-```
+```bash
 cd app
 npm start
 ```
@@ -65,7 +65,7 @@ Dockerfile を作成して、アプリケーションをコンテナ化します
 > - ファイルを作成したいフォルダを右クリック > New File
 
 `Dockerfile` を `app` フォルダ内に作成し、以下のコードを貼り付けます。
-```
+```dockerfile
 FROM public.ecr.aws/docker/library/node:18-alpine3.17 AS development
 ENV NODE_ENV development
 
@@ -85,13 +85,13 @@ CMD [ "npm", "start" ]
 ビルドのパフォーマンスを向上させるために、.dockerignore ファイルを追加してファイルとディレクトリを除外します。
 
 app フォルダのルートに .dockerignore ファイルを作成します。
-```
+```bash
 cd ~/environment/app
 touch .dockerignore
 ```
 
 .dockerignore ファイルを開いて、以下の内容を貼り付けます。
-```
+```bash
 **/node_modules
 **/npm-debug.log
 build
@@ -105,12 +105,12 @@ Tips
 > ![show-hidden-files](./images/show-hidden-files.png)
 
 Docker イメージをビルドします。
-```
+```bash
 docker build -t app:latest .
 ```
 
 ビルドしたイメージを確認します。
-```
+```bash
 docker images
 ```
 
@@ -122,7 +122,7 @@ public.ecr.aws/docker/library/node   18-alpine3.17   c2a82e9c8837   3 weeks ago 
 ```
 
 作成したイメージを開発環境で実行します。
-```
+```bash
 docker run \
   -it \
   --rm \
@@ -148,7 +148,7 @@ docker run \
 
 ### 3.1 ECR を定義
 まずは、現在の ECR の構成を見ていきましょう（233 行目〜）。
-```
+```typescript
 // Container Registry
 // - Using pull through cache rules
 //   https://docs.aws.amazon.com/AmazonECR/latest/userguide/pull-through-cache.html
@@ -181,13 +181,13 @@ new ecr.Repository(this, "Repository", {
 今回は独自のコンテナアプリケーションをデプロイしたいので、ECR の定義を書き換えていきます。
 
 まずは、プルスルーキャッシュに関する以下のコードを削除していきます（`ecrRepositoryPrefix` などは再利用します）。
-```
+```typescript
 new ecr.CfnPullThroughCacheRule(this, "PullThroughCacheRule", {
   ecrRepositoryPrefix: ecrRepositoryPrefix,
   upstreamRegistryUrl: "public.ecr.aws",
 });
 ```
-```
+```typescript
 const containerRepository = ecr.Repository.fromRepositoryName(
   this,
   "PullThrough",
@@ -196,12 +196,12 @@ const containerRepository = ecr.Repository.fromRepositoryName(
 ```
 
 `containerImage` を書き換えます。
-```
+```typescript
 const containerImage = "app"
 ```
 
 リポジトリの定義を修正します。
-```
+```typescript
 this.repository = new ecr.Repository(this, "Repository", {
   repositoryName: `${ecrRepositoryPrefix}/${containerImage}`,
   imageScanOnPush: true,
@@ -209,7 +209,7 @@ this.repository = new ecr.Repository(this, "Repository", {
 ```
 
 `repository` を外部（CI/CD パートで活用します）から参照可能なように、以下の定義をファイル冒頭（32行目） `export class EcsApp extends Construct {` の後ろに追加します。
-```
+```typescript
 public readonly repository: ecr.Repository;
 ```
 > TypeScript のクラス構文について（[参照](https://zenn.dev/kimura141899/articles/60bd0bc399296c)）
@@ -221,7 +221,7 @@ ECR の変更を ECS の CDK 定義に加えるとともに、いくつかパラ
 
 #### image 引数の修正
 まずは、現在の ECS の定義を見てみましょう。
-```
+```typescript
 const ecsContainer = taskDefinition.addContainer("App", {
   // -- Option 1: If you want to use your ECR repository with pull through cache, you can use like this.
 
@@ -233,7 +233,7 @@ const ecsContainer = taskDefinition.addContainer("App", {
 ```
 
 引数内の指定リポジトリを先ほど定義した ECR のリポジトリに変更します。
-```
+```typescript
 image: ecs.ContainerImage.fromEcrRepository(
   this.repository,
   "latest"
@@ -242,7 +242,7 @@ image: ecs.ContainerImage.fromEcrRepository(
 
 #### service を参照可能な形式に変更
 続いて、ECR と同様に `service` を外部（CI/CD パートで活用します）から参照可能なように、以下の定義をファイル冒頭（32行目） `export class EcsApp extends Construct {` の後ろに追加します。
-```
+```typescript
 public readonly service: ecs.FargateService;
 ```
 
@@ -251,14 +251,14 @@ public readonly service: ecs.FargateService;
 これまで定義した `repository`, `service` を `stack/blea-guest-ecs-app-sample-stack.ts` から参照します。
 ファイルを開き、以下のコードを追加します。
 
-```
+```typescript
 import { aws_ecr as ecr, aws_ecs as ecs } from "aws-cdk-lib";
 ```
-```
+```typescript
 public readonly repository: ecr.Repository;
 public readonly service: ecs.FargateService;
 ```
-```
+```typescript
 this.repository = ecsapp.repository;
 this.service = ecsapp.service;
 ```
@@ -268,7 +268,7 @@ this.service = ecsapp.service;
 
 まずはタスク定義から修正していきます。以下のように定義されているメモリ制限を 512 MiB から 2048 MiB に書き換えてください。
 
-```
+```typescript
 // Task definition
 // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
 const taskDefinition = new ecs.FargateTaskDefinition(
@@ -284,19 +284,19 @@ const taskDefinition = new ecs.FargateTaskDefinition(
 ```
 
 以下のように修正します。これにより、TypeScript のアプリケーションがメモリ不足で起動しない問題を防ぎます。
-```
+```typescript
 memoryLimitMiB: 2048,
 ```
 
 続いて、以下のコンテナのポート設定を書き換えます。
-```
+```typescript
 ecsContainer.addPortMappings({
   containerPort: 80,
 });
 ```
 
 作成した TypeScript アプリケーションはデフォルトでポート 3000 番で起動するので、ポート番号を上書きします。
-```
+```typescript
 containerPort: 3000,
 ```
 
@@ -312,14 +312,14 @@ L1 コンストラクト <-> L2 コンストラクトのリソースの記述に
 
 本ワークショップでは、`addPropertyOverride` メソッドにより構成を L1 レベルで上書きします。
 以下のコードを `// Define ALB Target Group` の真上に挿入してください。
-```
+```typescript
 const cfnService = this.service.node.defaultChild as ecs.CfnService;
 cfnService.addPropertyOverride('healthCheckGracePeriodSeconds', '600');
 ```
 
 #### デプロイ
 修正を加えた CDK の構成をデプロイします。
-```
+```bash
 npx cdk diff
 npx cdk deploy Dev-BLEAEcsApp
 ```

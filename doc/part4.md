@@ -32,7 +32,7 @@ graph TD;
 デフォルトでは、先ほどのステップで作成したテンプレートのサプリケーションはローカルの Git リポジトリも初期化します。しかし、これから自分で管理することになるので、Git 参照を削除しましょう。
 
 `.git` フォルダごと削除します。
-```
+```bash
 cd ~/environment/my-app
 rm -rf .git
 ```
@@ -41,20 +41,20 @@ rm -rf .git
 使用するデフォルトブランチや、コミットに使用する名前やメールアドレスなど、リポジトリのデフォルト設定をいくつか設定します。これは、`git config` コマンドを使用して行います。
 
 デフォルトブランチを `main` に設定します。
-```
+```bash
 git config --global init.defaultBranch main
 ```
 
 --- これより以下のステップはスキップ可能 ---
 
 `git config` を実行して、your-user-name と your-email-address のプレースホルダーで表されるユーザー名とメールアドレスをローカルリポジトリに追加します。これにより、行ったコミットを簡単に識別できます。
-```
+```bash
 git config --global user.name "your-user-name"
 git config --global user.email your-email-address
 ```
 
 `--list` フラグを使用して、デフォルトブランチ、名前、メールアドレスが正しく設定されていることを確認します。
-```
+```bash
 git config --list
 ```
 
@@ -69,13 +69,13 @@ user.email=your-email-address
 次に、ローカル Git リポジトリを作成します。
 
 作業ディレクトリのルートから、`git init` コマンドでソース管理リポジトリを初期化します。
-```
+```bash
 git init
 ```
 
 `git init` は空の Git リポジトリを作成するか、既存のリポジトリを再初期化します。
 作業ディレクトリのステータスを調べてみましょう。
-```
+```bash
 git status
 ```
 
@@ -99,7 +99,7 @@ nothing added to commit but untracked files present (use "git add" to track)
 
 `pipeline-cdk-stack.ts` という名前でファイルを作成し、`PipelineCdkStack` を定義します。
 
-```
+```typescript
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
@@ -115,7 +115,7 @@ export class PipelineCdkStack extends Stack {
 `PipelineCdkStack` では、後ほど `Dev-BLEAEcsApp` で定義された `repository`（ECR リポジトリ）, `service`（ECS のサービス） を参照します（[CDK でほかのスタックにあるリソースを参照したい](https://zenn.dev/5hintaro/articles/e8a20c171bf8fd)）。
 
 `bin/blea-guest-ecs-app-sample.ts` に `Dev-BLEAEcsApp` のリソース（`repository`, `service`）を渡します。
-```
+```typescript
 import { PipelineCdkStack } from "../lib/stack/pipeline-cdk-stack";
 
 ...
@@ -136,11 +136,11 @@ new PipelineCdkStack(app, "Pipeline", {
 ```
 
 次に、別スタックのリソースを参照します（`pipeline-cdk-stack.ts`）。
-```
+```typescript
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as ecr from "aws-cdk-lib/aws-ecr";
 ```
-```
+```typescript
 interface ConsumerProps extends StackProps {
   ecrRepository: ecr.Repository;
   fargateService: ecs.FargateService;
@@ -148,12 +148,12 @@ interface ConsumerProps extends StackProps {
 ```
 
 既存の `StackProps` を
-```
+```typescript
 constructor(scope: Construct, id: string, props: StacksProps) {
 ```
 
 今定義した `ConsumerProps` 書き換えます。
-```
+```typescript
 constructor(scope: Construct, id: string, props: ConsumerProps) {
 ```
 
@@ -164,12 +164,12 @@ constructor(scope: Construct, id: string, props: ConsumerProps) {
 [CDK API Reference](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_codecommit.Repository.html) を参照して、スタック内に CodeCommit リポジトリを定義していきます。
 
 CodeCommit パッケージをインストールします。
-```
+```typescript
 import * as codecommit from 'aws-cdk-lib/aws-codecommit';
 ```
 
 `codecommit` コンストラクトを使用して、`CICD_Repository` という新しい CodeCommit リポジトリを作成します。
-```
+```typescript
 const sourceRepo = new codecommit.Repository(this, "CICD_Repository", {
   repositoryName: "CICD_Repository",
   description: "CICD Repository",
@@ -181,7 +181,7 @@ const sourceRepo = new codecommit.Repository(this, "CICD_Repository", {
 入力および出力アーティファクトの詳細については、[こちら](https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome-introducing-artifacts.html)をご覧ください。
 
 ソースとユニットテストのステージにアーティファクトを追加します。
-```
+```typescript
 const sourceOutput = new codepipeline.Artifact();
 ```
 
@@ -189,7 +189,7 @@ Tips
 > Cloud9 IDE 上でコードのフォーマット整形を行いたい場合は、Edit > Code Formatting から設定を変更できます。
 
 追加内容をデプロイします。
-```
+```bash
 npx cdk diff
 npx cdk deploy CICDPipeline
 ```
@@ -200,13 +200,13 @@ npx cdk deploy CICDPipeline
 ![console-codecommit](./images/console-codecommit.png)
 
 ローカルリポジトリをリモートリポジトリに接続します。
-```
+```bash
 cd ~/environment/app
 git remote add origin <コピーした URL>
 ```
 
 オリジンが設定されていることを確認します。
-```
+```bash
 git remote -v
 ```
 
@@ -218,7 +218,7 @@ origin  https://git-codecommit.eu-west-2.amazonaws.com/v1/repos/CICD_Workshop (p
 
 `app/` フォルダの中身をリポジトリにプッシュします。
 Commit を main ブランチにします（CodeCommit のデフォルトが main のため）。
-```
+```bash
 git add .
 git commit -m "initial commit"
 git push --set-upstream origin main
@@ -235,12 +235,12 @@ git push --set-upstream origin main
 前のセクションで作成した `pipeline-cdk-stack.ts` を拡張して、パイプラインを定義し、すでに定義して設定しているソース管理リポジトリを参照するようにします。
 
 codepipeline コンストラクトをインポートします。
-```
+```typescript
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 ```
 
 CICD_Pipeline という新しい codepipeline を作成します。
-```
+```typescript
 const pipeline = new codepipeline.Pipeline(this, 'CICD_Pipeline', {
   pipelineName: 'CICD_Pipeline',
   crossAccountKeys: false,
@@ -248,7 +248,7 @@ const pipeline = new codepipeline.Pipeline(this, 'CICD_Pipeline', {
 ```
 
 ソース管理リポジトリにステージとアクションを追加します。
-```
+```typescript
 import * as codepipeline_actions from "aws-cdk-lib/aws-codepipeline-actions";
 
 ...
@@ -272,7 +272,7 @@ pipeline.addStage({
 `app/` フォルダに `buildspec_docker.yml` という名前の新しいファイルを作成します。
 
 以下をコピーして、コンテナをビルドするビルド仕様を定義します。
-```
+```yml
 version: 0.2
 
 phases:
@@ -319,7 +319,7 @@ Tips
 
 最後に `buildspec_docker.yml` をリポジトリに反映させるために、`app/` フォルダの中身をリポジトリにプッシュします。
 Commit を main ブランチにします（CodeCommit のデフォルトが main のため）。
-```
+```bash
 git add .
 git commit -m "initial commit"
 git push --set-upstream origin main
@@ -330,12 +330,12 @@ git push --set-upstream origin main
 
 
 codebuild コンストラクトをインポートします。
-```
+```typescript
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 ```
 
 Docker ビルドステージに、新しく PipelineProject を追加します。
-```
+```typescript
 const dockerBuildProject = new codebuild.PipelineProject(
   this,
   "DockerBuildProject",
@@ -361,12 +361,12 @@ const dockerBuildProject = new codebuild.PipelineProject(
 ビルド環境には Amazon ECR にプッシュする権限がないため、これを許可するポリシーを作成します。
 
 IAM コンストラクトをインポートします。
-```
+```typescript
 import * as iam from 'aws-cdk-lib/aws-iam';
 ```
 
 CodeBuild プロジェクトに IAM ポリシーステートメントを追加して、ビルド環境が Amazon ECR とやりとりできるようにします。
-```
+```typescript
 const dockerBuildRolePolicy =  new iam.PolicyStatement({
   effect: iam.Effect.ALLOW,
   resources: ['*'],
@@ -388,17 +388,17 @@ const dockerBuildRolePolicy =  new iam.PolicyStatement({
 ```
 
 ロールをビルドプロジェクトに追加します。
-```
+```typescript
 dockerBuildProject.addToRolePolicy(dockerBuildRolePolicy);
 ```
 
 Docker ビルドの出力アーティファクトを追加します。
-```
+```typescript
 const dockerBuildOutput = new codepipeline.Artifact();
 ```
 
 最後に、コンテナをビルドするステージを追加します。
-```
+```typescript
 pipeline.addStage({
   stageName: 'Build',
   actions: [
@@ -413,7 +413,7 @@ pipeline.addStage({
 ```
 
 パイプラインをデプロイします。
-```
+```bash
 npx cdk diff
 npx cdk deploy CICDPipeline
 ```
@@ -426,7 +426,7 @@ npx cdk deploy CICDPipeline
 本番環境（ECS）へのデプロイプロセスを追加します。
 
 以下のステージを追加してましょう。
-```
+```typescript
 pipeline.addStage({
   stageName: 'Deploy',
   actions: [
@@ -440,7 +440,7 @@ pipeline.addStage({
 ```
 
 パイプラインをデプロイします。
-```
+```bash
 npx cdk diff
 npx cdk deploy CICDPipeline
 ```
@@ -448,7 +448,7 @@ npx cdk deploy CICDPipeline
 最後に、アプリケーションに変更を加えて、デプロイまで自動に走るか確認します。
 
 アプリケーションの `app/src/App.tsx` の任意の箇所を修正します。
-```
+```typescript
 import React from 'react';
 import logo from './logo.svg';
 import './App.css';
@@ -478,7 +478,7 @@ export default App;
 ```
 
 その後、`app/` フォルダの中身をリポジトリにプッシュします。
-```
+```bash
 git add .
 git commit -m "initial commit"
 git push --set-upstream origin main

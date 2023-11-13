@@ -173,4 +173,4 @@ npx cdk diff
 npx cdk deploy Dev-BLEAEcsApp
 ```
 
-Aurora クラスターを無事にサーバーレスに変更することができました。
+Aurora クラスターを無事にサーバーレス化することができました。

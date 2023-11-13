@@ -4,6 +4,7 @@ import { devParameter } from "../parameter";
 import { BLEAEcsAppStack } from "../lib/stack/blea-guest-ecs-app-sample-stack";
 import { BLEAEcsAppFrontendStack } from "../lib/stack/blea-guest-ecs-app-frontend-stack";
 import { BLEAEcsAppMonitoringStack } from "../lib/stack/blea-guest-ecs-app-monitoring-stack";
+import { PipelineCdkStack } from "../lib/stack/pipeline-cdk-stack";
 
 const app = new App();
 
@@ -76,4 +77,18 @@ new BLEAEcsAppMonitoringStack(app, "Dev-BLEAEcsAppMonitoring", {
 
   // from Frontend stack
   distributionId: frontend.distributionId,
+});
+
+new PipelineCdkStack(app, "CICDPipeline", {
+  env: {
+    account: devParameter.env?.account || process.env.CDK_DEFAULT_ACCOUNT,
+    region: devParameter.env?.region || process.env.CDK_DEFAULT_REGION,
+  },
+  crossRegionReferences: true,
+  tags: {
+    Repository: "sample-container-app",
+    Environment: devParameter.envName,
+  },
+  ecrRepository: ecsapp.repository,
+  fargateService: ecsapp.service
 });

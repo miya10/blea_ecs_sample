@@ -4,6 +4,7 @@ import { AppParameter } from "../../parameter";
 import { BLEAEcsAppFrontendStack } from "../stack/blea-guest-ecs-app-frontend-stack";
 import { BLEAEcsAppMonitoringStack } from "../stack/blea-guest-ecs-app-monitoring-stack";
 import { BLEAEcsAppStack } from "../stack/blea-guest-ecs-app-sample-stack";
+import { PipelineCdkStack } from "../stack/pipeline-cdk-stack";
 
 export class BLEAEcsAppStage extends Stage {
   constructor(scope: Construct, id: string, props: AppParameter) {
@@ -77,6 +78,20 @@ export class BLEAEcsAppStage extends Stage {
 
       // from Frontend stack
       distributionId: frontend.distributionId,
+    });
+
+    new PipelineCdkStack(this, "Pipeline", {
+      env: {
+        account: props.env?.account || process.env.CDK_DEFAULT_ACCOUNT,
+        region: props.env?.region || process.env.CDK_DEFAULT_REGION,
+      },
+      crossRegionReferences: true,
+      tags: {
+        Repository: "aws-samples/baseline-environment-on-aws",
+        Environment: props.envName,
+      },
+      ecrRepository: ecsapp.repository,
+      fargateService: ecsapp.service
     });
   }
 }

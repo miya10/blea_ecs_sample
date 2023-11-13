@@ -1,4 +1,5 @@
 import { Names, Stack, StackProps } from "aws-cdk-lib";
+import { aws_ecr as ecr, aws_ecs as ecs } from "aws-cdk-lib";
 import { IAlarm } from "aws-cdk-lib/aws-cloudwatch";
 import { Key } from "aws-cdk-lib/aws-kms";
 import { ITopic } from "aws-cdk-lib/aws-sns";
@@ -25,6 +26,8 @@ export class BLEAEcsAppStack extends Stack {
   public readonly ecsTargetUtilizationPercent: number;
   public readonly ecsScaleOnRequestCount: number;
   public readonly dbClusterName: string;
+  public readonly repository: ecr.Repository;
+  public readonly service: ecs.FargateService;
 
   constructor(scope: Construct, id: string, props: BLEAEcsAppStackProps) {
     super(scope, id, props);
@@ -67,5 +70,7 @@ export class BLEAEcsAppStack extends Stack {
     this.ecsServiceName = ecsapp.ecsServiceName;
     this.ecsTargetUtilizationPercent = ecsapp.ecsTargetUtilizationPercent;
     this.ecsScaleOnRequestCount = ecsapp.ecsScaleOnRequestCount;
+    this.repository = ecsapp.repository;
+    this.service = ecsapp.service;
   }
 }

@@ -34,23 +34,40 @@ export class Datastore extends Construct {
     const cluster = new rds.DatabaseCluster(this, "AuroraCluster", {
       // for Aurora PostgreSQL
       engine: rds.DatabaseClusterEngine.auroraPostgres({
-        version: rds.AuroraPostgresEngineVersion.VER_11_9,
+        version: rds.AuroraPostgresEngineVersion.VER_15_3,
       }),
       // for Aurora MySQL
       // engine: rds.DatabaseClusterEngine.auroraMysql({
       //   version: rds.AuroraMysqlEngineVersion.VER_2_09_1
       // }),
       credentials: rds.Credentials.fromGeneratedSecret("dbadmin"),
-      instanceProps: {
-        instanceType: InstanceType.of(InstanceClass.T3, InstanceSize.MEDIUM),
-        vpcSubnets: {
-          subnetType: SubnetType.PRIVATE_ISOLATED,
-        },
-        vpc: props.vpc,
+      // instanceProps: {
+      //   instanceType: InstanceType.of(InstanceClass.T3, InstanceSize.MEDIUM),
+      //   vpcSubnets: {
+      //     subnetType: SubnetType.PRIVATE_ISOLATED,
+      //   },
+      //   vpc: props.vpc,
+      //   enablePerformanceInsights: true,
+      //   performanceInsightEncryptionKey: props.cmk,
+      //   performanceInsightRetention: rds.PerformanceInsightRetention.DEFAULT, // 7 days
+      // },
+      vpc: props.vpc,
+      vpcSubnets: {
+        subnetType: SubnetType.PRIVATE_ISOLATED,
+      },
+      writer: rds.ClusterInstance.serverlessV2("writer", {
         enablePerformanceInsights: true,
         performanceInsightEncryptionKey: props.cmk,
-        performanceInsightRetention: rds.PerformanceInsightRetention.DEFAULT, // 7 days
-      },
+        performanceInsightRetention: rds.PerformanceInsightRetention.DEFAULT,
+      }),
+      readers: [
+        rds.ClusterInstance.serverlessV2("reader1", {
+          enablePerformanceInsights: true,
+          performanceInsightEncryptionKey: props.cmk,
+          performanceInsightRetention: rds.PerformanceInsightRetention.DEFAULT,
+        }),
+      ],
+
       removalPolicy: RemovalPolicy.SNAPSHOT,
       defaultDatabaseName: "mydb",
       storageEncrypted: true,

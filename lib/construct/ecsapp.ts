@@ -38,6 +38,8 @@ export class EcsApp extends Construct {
   public readonly ecsTargetUtilizationPercent: number;
   public readonly ecsScaleOnRequestCount: number;
   public readonly alb: ILoadBalancerV2;
+  public readonly repository: ecr.Repository;
+  public readonly service: ecs.FargateService;
 
   constructor(scope: Construct, id: string, props: EcsAppProps) {
     super(scope, id);
@@ -226,7 +228,7 @@ export class EcsApp extends Construct {
         executionRole: taskExecutionRole,
         taskRole: taskRole,
         cpu: 256,
-        memoryLimitMiB: 512,
+        memoryLimitMiB: 2048,
       }
     );
 
@@ -238,29 +240,20 @@ export class EcsApp extends Construct {
       maxLength: 20,
       separator: "-",
     }).toLowerCase();
-    new ecr.CfnPullThroughCacheRule(this, "PullThroughCacheRule", {
-      ecrRepositoryPrefix: ecrRepositoryPrefix,
-      upstreamRegistryUrl: "public.ecr.aws",
-    });
 
     // Container
-    const containerImage = "docker/library/httpd";
-    const containerRepository = ecr.Repository.fromRepositoryName(
-      this,
-      "PullThrough",
-      `${ecrRepositoryPrefix}/${containerImage}`
-    );
+    const containerImage = "app";
 
     // The repository is automatically created by pull through cache, but you must specify it explicitly to enable ImageScanonPush.
-    new ecr.Repository(this, "Repository", {
-      repositoryName: containerRepository.repositoryName,
+    this.repository = new ecr.Repository(this, "Repository", {
+      repositoryName: `${ecrRepositoryPrefix}/${containerImage}`,
       imageScanOnPush: true,
     });
 
     const ecsContainer = taskDefinition.addContainer("App", {
       // -- Option 1: If you want to use your ECR repository with pull through cache, you can use like this.
       image: ecs.ContainerImage.fromEcrRepository(
-        containerRepository,
+        this.repository,
         "latest"
       ),
 
@@ -287,11 +280,11 @@ export class EcsApp extends Construct {
     });
 
     ecsContainer.addPortMappings({
-      containerPort: 80,
+      containerPort: 3000,
     });
 
     // Service
-    const service = new ecs.FargateService(this, "Service", {
+    this.service = new ecs.FargateService(this, "Service", {
       cluster,
       taskDefinition,
       desiredCount: 2,
@@ -322,13 +315,16 @@ export class EcsApp extends Construct {
       securityGroups: [appSg],
       serviceName: PhysicalName.GENERATE_IF_NEEDED, // for crossRegionReferences
     });
-    this.ecsServiceName = service.serviceName;
+    this.ecsServiceName = this.service.serviceName;
+
+    const cfnService = this.service.node.defaultChild as ecs.CfnService;
+    cfnService.addPropertyOverride('healthCheckGracePeriodSeconds', '600');
 
     // Define ALB Target Group
     // https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-elasticloadbalancingv2.ApplicationTargetGroup.html
     const appTargetGroup = albListener.addTargets("AppTargetGroup", {
       protocol: elbv2.ApplicationProtocol.HTTP,
-      targets: [service],
+      targets: [this.service],
       deregistrationDelay: cdk.Duration.seconds(30),
     });
     this.albTargetGroupName = appTargetGroup.targetGroupName;
@@ -344,7 +340,7 @@ export class EcsApp extends Construct {
 
     // ECS Task AutoScaling
     // https://docs.aws.amazon.com/cdk/api/latest/docs/aws-ecs-readme.html#task-auto-scaling
-    const ecsScaling = service.autoScaleTaskCount({
+    const ecsScaling = this.service.autoScaleTaskCount({
       minCapacity: 2,
       maxCapacity: 10,
     });
@@ -363,7 +359,7 @@ export class EcsApp extends Construct {
     });
 
     // ----------------------- Alarms for ECS -----------------------------
-    service
+    this.service
       .metricCpuUtilization({
         period: cdk.Duration.minutes(1),
         statistic: cw.Stats.AVERAGE,

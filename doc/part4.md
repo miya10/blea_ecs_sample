@@ -120,7 +120,7 @@ import { PipelineCdkStack } from "../lib/stack/pipeline-cdk-stack";
 
 ...
 
-new PipelineCdkStack(app, "Pipeline", {
+new PipelineCdkStack(app, "CICDPipeline", {
   env: {
     account: devParameter.env?.account || process.env.CDK_DEFAULT_ACCOUNT,
     region: devParameter.env?.region || process.env.CDK_DEFAULT_REGION,
@@ -180,6 +180,11 @@ const sourceRepo = new codecommit.Repository(this, "CICD_Repository", {
 
 入力および出力アーティファクトの詳細については、[こちら](https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome-introducing-artifacts.html)をご覧ください。
 
+codepipeline コンストラクトをインポートします。
+```typescript
+import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
+```
+
 ソースとユニットテストのステージにアーティファクトを追加します。
 ```typescript
 const sourceOutput = new codepipeline.Artifact();
@@ -233,11 +238,6 @@ git push --set-upstream origin main
 
 #### パイプラインの定義
 前のセクションで作成した `pipeline-cdk-stack.ts` を拡張して、パイプラインを定義し、すでに定義して設定しているソース管理リポジトリを参照するようにします。
-
-codepipeline コンストラクトをインポートします。
-```typescript
-import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
-```
 
 CICD_Pipeline という新しい codepipeline を作成します。
 ```typescript

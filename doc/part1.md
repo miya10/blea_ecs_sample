@@ -47,7 +47,7 @@ Tips
 - 原因：For CLOUDFRONT, you must create your WAFv2 resources in the US East (N. Virginia) Region, us-east-1 ([URL](https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-wafv2-webacl.html#aws-resource-wafv2-webacl-properties)).
 - 対処法
   - us-east-1にも `npx cdk bootstrap` する必要がある
-  - `npx cdk bootstrap aws://464434186803/us-east-1` を実行
+  - `npx cdk bootstrap aws://<account_id>/us-east-1` を実行
 
 デプロイが完了すれば、CloudFront のディストリビューションドメインにアクセスしてください。以下のように「It works!」という画面が出ていれば、サンプルアプリケーションのデプロイは構築です。
 

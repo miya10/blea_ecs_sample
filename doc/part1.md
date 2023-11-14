@@ -34,7 +34,7 @@ npx cdk bootstrap
 
 CDK 初回デプロイ（30 分前後かかります）
 ```bash
-npx cdk deploy --all
+npx cdk deploy --all --require-approval never
 ```
 
 Tips
